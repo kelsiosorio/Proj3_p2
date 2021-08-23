@@ -1,0 +1,132 @@
+---
+title: "Analysis my_rf_cv"
+author: "Kelsi Osorio"
+date: "08/23/2021"
+output: html_document
+---
+
+<!--- Begin styling code. --->
+<style type="text/css">
+/* Whole document: */
+body{
+  font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  font-size: 12pt;
+}
+h1.title {
+  font-size: 38px;
+  text-align: center;
+}
+h4.author {
+  font-size: 18px;
+  text-align: center;
+}
+h4.date {
+  font-size: 18px;
+  text-align: center;
+}
+</style>
+<!--- End styling code. --->
+
+```{r, message=FALSE, warning=FALSE}
+# loading packages
+library(tidyverse)
+library(splitstackshape)
+library(stringr)
+library(dplyr)
+library(ggplot2)
+library(utils)
+library(kableExtra)
+```
+
+
+```{r}
+# Loading data
+my_penguins_data <- read_csv("C:/Users/kelsi/OneDrive/Documents/STAT302/Projects/Project3/Proj3_p2/Data/my_penguins.csv")
+my_gapminder_data <- read_csv("C:/Users/kelsi/OneDrive/Documents/STAT302/Projects/Project3/Proj3_p2/Data/my_gapminder.csv")
+
+# Loading function
+
+my_rf_cv <- source("C:/Users/kelsi/OneDrive/Documents/STAT302/Projects/Project3/Proj3_p2/Code/my_rf_cv.R")
+
+```
+
+# my_rf_cv Tutorial
+
+We are going to predict body_mass_g using covariates bill_length_mm, bill_depth_mm, and flipper_length_mm. We are going to iterate k in c(2, 5, 10), each value for 30 times 
+
+```{r}
+# rf_errors(): function that creates data frame CV_MSE for a couple iterations of my_rf_cv
+# input: k like in my_rf_cv and j iterations
+# output: data frame with CV_MSEs for k
+rf_errors <- function(k, j) {
+  # initializing data frames
+  rf_mse <- data.frame()
+  # iteration of my_rf_cv 1 to j
+  for (i in 1:j) {
+    ## running my_rf_cv
+    ## Here is where we used my_rf_cv to predict class
+    k_rf_val <- my_rf_cv(k)
+    # Adding CV_MSE to table
+    rf_mse<- rbind(rf_mse, i = k_rf_val)
+  }
+  # adding fold label to output data frame
+  label <- data.frame(matrix(NA, nrow = j, ncol = 1))
+  label[, 1] <- rep(as.character(c(k)), each = j)
+  # creating output data frame and adding labels
+  mse <- cbind(label, rf_mse)
+  colnames(mse) <- c("fold", "CV_MSE")
+  return(mse)
+}
+```
+
+```{r}
+# making tables with 30 iterations of each fold
+set.seed(93)
+k_2 <- rf_errors(2, 30)
+k_5 <- rf_errors(5, 30)
+k_10 <- rf_errors(10, 30)
+
+# Creating data frame with all three where fold is a classification
+all_cv_mse <- rbind(k_2, k_5, k_10)
+```
+
+
+Let's create some graphs to display this data in a more informative way. 
+
+```{r, fig.width=8, fig.height=5}
+# boxplot of each fold representing distribution of the 30 simulation
+rf_graph <- ggplot(data = all_cv_mse, aes(x = fold, y = CV_MSE)) + 
+  geom_boxplot() +
+  # resizing font 
+  theme_bw(base_size = 15) +
+  # changing labels
+  labs(title = "CV_MSE distrubutions of 30 simulations of my_rf_cv by folds",
+       x = "folds",
+       y = "CV estimated MSE") +
+  # adjusting placement
+  theme(plot.title =
+          element_text(hjust = 0.5),
+         plot.caption =
+           element_text(hjust = 0))
+rf_graph
+ggsave(path = "C:\\Users\\kelsi\\OneDrive\\Documents\\STAT302\\Projects\\Project3\\Proj3_p2\\Output\\Figures", filename = "rf_graph.png")
+
+```
+
+
+```{r}
+sd_mean_df <- data.frame("Avg CV estimate" = c(colMeans(k_2 %>% select(CV_MSE)), 
+                                   colMeans(k_5 %>% select(CV_MSE)),
+                                   colMeans(k_10 %>% select(CV_MSE))),
+                        "Std dev of CV estimates" = c(sd(k_2 %>% pull(CV_MSE)),
+                                 sd(k_5 %>% pull(CV_MSE)),
+                                 sd(k_10 %>% pull(CV_MSE))))
+rownames(sd_mean_df) <- c("2 folds", "5 folds", "10 folds")
+table <- kable_styling(kable(sd_mean_df))
+table
+
+```
+
+By looking at just the box plots we see that as we increase the values of k, the number of folds, the range of the CV estimated MSEs gets smaller. From the table we see that the averate CV estimate get smaller as k is increased, and the standard deviations of the CV estimates also decreases. The reason why increasing the number of folds decreases the CV MSE might be because as the number of folds increases we begin to over fit the data. As mentioned in the previous section, the point of cross validation is to test the model on data that we did not use to train it; however, as we increase the folds we may give single values to much power over the whole model. This may be why we see a decrease in the CV_MSE and in the variation.    
+
+
