@@ -39,18 +39,16 @@ library(kableExtra)
 ```
 
 
-```{r}
+```{r, message=FALSE, warning=FALSE, error=FALSE}
 # Loading data
 my_penguins_data <- read_csv("C:/Users/kelsi/OneDrive/Documents/STAT302/Projects/Project3/Proj3_p2/Data/my_penguins.csv")
 my_gapminder_data <- read_csv("C:/Users/kelsi/OneDrive/Documents/STAT302/Projects/Project3/Proj3_p2/Data/my_gapminder.csv")
 
 # Loading function
-
-my_rf_cv <- source("C:/Users/kelsi/OneDrive/Documents/STAT302/Projects/Project3/Proj3_p2/Code/my_rf_cv.R")
+source("C:/Users/kelsi/OneDrive/Documents/STAT302/Projects/Project3/Proj3_p2/Code/my_rf_cv.R")
 
 ```
 
-# my_rf_cv Tutorial
 
 We are going to predict body_mass_g using covariates bill_length_mm, bill_depth_mm, and flipper_length_mm. We are going to iterate k in c(2, 5, 10), each value for 30 times 
 
@@ -79,13 +77,18 @@ rf_errors <- function(k, j) {
 }
 ```
 
-```{r}
+```{r, message=FALSE, warning=FALSE, error=FALSE}
 # making tables with 30 iterations of each fold
 set.seed(93)
 k_2 <- rf_errors(2, 30)
 k_5 <- rf_errors(5, 30)
 k_10 <- rf_errors(10, 30)
-
+# Creating data frame with 3 columns for each k 
+tab_cv_mse <- data.frame("2 folds" = k_2$CV_MSE, 
+                         "5 folds" = k_5$CV_MSE,
+                         "10 folds" = k_10$CV_MSE)
+# Saving table to output folder
+write.csv(tab_cv_mse, file = "C:\\Users\\kelsi\\OneDrive\\Documents\\STAT302\\Projects\\Project3\\Proj3_p2\\Output\\Results\\tab_cv_mse.csv")
 # Creating data frame with all three where fold is a classification
 all_cv_mse <- rbind(k_2, k_5, k_10)
 ```
@@ -109,12 +112,16 @@ rf_graph <- ggplot(data = all_cv_mse, aes(x = fold, y = CV_MSE)) +
          plot.caption =
            element_text(hjust = 0))
 rf_graph
+```
+```{r, include=FALSE}
+# saving graph
 ggsave(path = "C:\\Users\\kelsi\\OneDrive\\Documents\\STAT302\\Projects\\Project3\\Proj3_p2\\Output\\Figures", filename = "rf_graph.png")
 
 ```
 
 
 ```{r}
+# Creating table of average CV_MSE and their standard deviation
 sd_mean_df <- data.frame("Avg CV estimate" = c(colMeans(k_2 %>% select(CV_MSE)), 
                                    colMeans(k_5 %>% select(CV_MSE)),
                                    colMeans(k_10 %>% select(CV_MSE))),
@@ -122,8 +129,13 @@ sd_mean_df <- data.frame("Avg CV estimate" = c(colMeans(k_2 %>% select(CV_MSE)),
                                  sd(k_5 %>% pull(CV_MSE)),
                                  sd(k_10 %>% pull(CV_MSE))))
 rownames(sd_mean_df) <- c("2 folds", "5 folds", "10 folds")
-table <- kable_styling(kable(sd_mean_df))
-table
+sm_table <- kable_styling(kable(sd_mean_df))
+sm_table
+```
+
+```{r}
+#saving table
+saveRDS(sm_table, file = "C:\\Users\\kelsi\\OneDrive\\Documents\\STAT302\\Projects\\Project3\\Proj3_p2\\Output\\Results\\sm_table.rds")
 
 ```
 

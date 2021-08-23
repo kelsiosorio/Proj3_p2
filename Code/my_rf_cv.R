@@ -13,11 +13,13 @@
 #'
 #' @export
 my_rf_cv <- function(k) {
+  # importing data
+  my_penguins <- readr::read_csv("C:/Users/kelsi/OneDrive/Documents/STAT302/Projects/Project3/Proj3_p2/Data/my_penguins.csv")
   # Clean data
-  clean_penguins <- stats::na.omit(STAT302package::my_penguins %>% dplyr::select(bill_length_mm,
-                                                                                 bill_depth_mm,
-                                                                                 flipper_length_mm,
-                                                                                 body_mass_g))
+  clean_penguins <- stats::na.omit(my_penguins %>% dplyr::select(bill_length_mm,
+                                                                 bill_depth_mm,
+                                                                 flipper_length_mm,
+                                                                 body_mass_g))
   # split data into k parts, randomly
   fold <- sample(rep(1:k, length = nrow(clean_penguins)))
   # binding data together
